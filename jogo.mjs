@@ -15,9 +15,6 @@ indice                              ij macro                            ij micro
 0|1|2
 3|4|5
 6|7|8
-
-
-
 */
 
 class Jogada {
@@ -25,7 +22,7 @@ class Jogada {
         // codigo = "[usuario]/[indice_9x9_0_a_80]"
         let [usuario, indice] = codigo.split("/");
         this.indice = Number(indice);
-        this.usuario = usuario;
+        this.usuario = Number(usuario);
     }
     get micro_i() {
         return Math.floor(this.indice % 27 / 9);
@@ -48,15 +45,14 @@ class Jogada {
     identico(jogada) {
         return this.codigo === jogada.codigo;
     }
-    static indice2indice(macro_i, macro_j, micro_i, micro_j) {
-        return indice
+    static indices2indice(macro_i, macro_j, micro_i, micro_j) {
+        return macro_i * 27 + macro_j * 3 + micro_i * 9 + micro_j;
     }
 }
 
 class JogoDaVelha {
     constructor() {
         this.tabuleiro = new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => null));
-        console.log(this.tabuleiro)
     }
 
     vencedor() {
@@ -88,7 +84,7 @@ class JogoDaVelha {
     }
 
     movimentos_possiveis() {
-        // [{i, j}, ...]  3x3
+        // [indice]
         let nulls = [];
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -141,12 +137,30 @@ class MacroJogoDaVelha {
         return undefined;
     }
 
-    movimentos_possiveis() {
-        // [{i, j}, ...]  3x3
+    movimentos_possiveis(ultima_jogada) {
+        // [indice]
         let nulls = [];
-        for (let i = 0; i < this.tabuleiro; i++) {
-            for (let j = 0; j < this.tabuleiro[i]; j++) {
-                nulls.push(...this.tabuleiro[i][j].movimentos_possiveis().map(ij micro pro macro));
+        if (ultima_jogada !== undefined) {
+            // não é primeira jogada
+            let tabuleiro_para_jogar = this.tabuleiro[ultima_jogada.micro_i][ultima_jogada.micro_j]; //pega o tabuleiro a ser jogado
+            let vencedor = tabuleiro_para_jogar.vencedor(); // verifica vencedor
+            if (vencedor === null) {
+                //ainda não finalizado
+                nulls.push(...this.tabuleiro[ultima_jogada.micro_i][ultima_jogada.micro_j].movimentos_possiveis().map(micro => Jogada.indices2indice(i, j, micro.i, micro.j)));
+            } else {
+                //tabuleiro finalizado, escolher qualquer um
+                for (let i = 0; i < this.tabuleiro.length; i++) {
+                    for (let j = 0; j < this.tabuleiro[i].length; j++) {
+                        nulls.push(...this.tabuleiro[i][j].movimentos_possiveis().map(micro => Jogada.indices2indice(i, j, micro.i, micro.j)));
+                    }
+                }
+            }
+        } else {
+            // primeira jogada
+            for (let i = 0; i < this.tabuleiro.length; i++) {
+                for (let j = 0; j < this.tabuleiro[i].length; j++) {
+                    nulls.push(...this.tabuleiro[i][j].movimentos_possiveis().map(micro => Jogada.indices2indice(i, j, micro.i, micro.j)));
+                }
             }
         }
         return nulls;
@@ -155,11 +169,9 @@ class MacroJogoDaVelha {
     adicionar_jogada(jogada) {
         // adiciona a jogada do usuario
         // return this.vencedor()
-        // if (!(jogada instanceof Jogada)) throw Error("Não é do tipo jogada");
-        // if (this.tabuleiro[jogada.micro_i][jogada.micro_j] === null) {
-        //     this.tabuleiro[jogada.micro_i][jogada.micro_j] = jogada.usuario;
-        // } else throw Error("Lugar não vazio");
-        // return this.vencedor();
+        if (!(jogada instanceof Jogada)) throw Error("Não é do tipo jogada");
+        this.tabuleiro[jogada.macro_i][jogada.macro_j].adicionar_jogada(jogada);
+        return this.vencedor();
     }
 }
 
@@ -170,20 +182,12 @@ class Jogo {
         */
         this.jogadores = jogadores;
         this.jogadas = [];
-        // this.minijogos = new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => new MiniJogo()));
+        this.tabuleiro = new MacroJogoDaVelha();
     }
 
     movimentos_possiveis() {
-        // // retorna lista de objetos com as posições de jogadas possiveis
-        // for (let i = 0; i < 9; i++) {
-        //     for (let j = 0; j < 9; j++) {
-        //         // verificar se quadrado foi preenchido
-        //         // verificar se jogo está finalizado
-        //         // verificar coerencia com jogada anterior
-        //         // verificar se lugar está vazio
-        //     }
-        // }
-        // return [];
+        // retorna lista de objetos com as posições de jogadas possiveis
+        return this.tabuleiro.movimentos_possiveis(this.jogadas[this.jogadas.length - 1]);
     }
 
     proximo_jogador() {
@@ -191,35 +195,30 @@ class Jogo {
     }
 
     valida(jogada) {
-        // let esta_no_lugar_possivel = false;
-        // for (let lugar_possivel of this.proximos_movimentos_possiveis()) {
-        //     let jogada_tabuleiro = jogada.tabuleiro;
-        //     if (jogada_tabuleiro.i === lugar_possivel.i && jogada_tabuleiro.j === lugar_possivel.j) {
-        //         esta_no_lugar_possivel = true;
-        //         break;
-        //     }
-        // }
-        // if (!esta_no_lugar_possivel) throw Error("Jogada inválida");
-        // if (jogada.usuario !== this.proximo_jogador()) throw Error("Não é a vez desse jogador");
+        let esta_no_lugar_possivel = false;
+        for (let indice_possivel of this.movimentos_possiveis()) {
+            if (indice_possivel === jogada.indice) {
+                esta_no_lugar_possivel = true;
+                break;
+            }
+        }
+        if (!esta_no_lugar_possivel) throw Error("Jogada inválida");
+        if (jogada.usuario !== this.proximo_jogador()) throw Error("Não é a vez desse jogador");
     }
 
     adicionar_jogada(jogada) {
         if (!(typeof jogada === "object" && jogada instanceof Jogada)) throw Error("Jogada não é do tipo Jogada");
         this.valida(jogada);
-        // console.log(jogada);
-        // this.jogadas.push(jogada);
-        // let {
-        //     i,
-        //     j
-        // } = jogada.tabuleiro;
-        // this.tabuleiro[i][j] = jogada.usuario;
+        this.jogadas.push(jogada);
+        this.tabuleiro.adicionar_jogada(jogada);
     }
 }
 
 // let j1 = Jogada.por_codigo(1, "8/7");
 // let j2 = Jogada.por_codigo(2, "7/5");
 // let j3 = Jogada.por_codigo(2, "5/2");
-// let jogo = new Jogo([1, 2]);
+let jogo = new Jogo([1, 2]);
+console.log(jogo.movimentos_possiveis())
 // jogo.adicionar_jogada(j1);
 // jogo.adicionar_jogada(j2);
 // jogo.adicionar_jogada(j3);
