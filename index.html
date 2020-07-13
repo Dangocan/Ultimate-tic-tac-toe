@@ -1,0 +1,27 @@
+<html>
+
+<head>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        let socket = io();
+
+        socket.on("fezes", function (msg) {
+            console.log(msg);
+        })
+        setInterval(function () {
+            console.log("emitindo teste");
+            socket.emit("teste", "hi there, im here still");
+        }, 1000)
+    </script>
+</head>
+
+
+</html>
+
+
+
+<h1>
+    Hi there im just testing if this works
+</h1>

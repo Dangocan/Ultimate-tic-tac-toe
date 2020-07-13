@@ -1,0 +1,40 @@
+X e O como imagens
+tipo e cor
+svg
+
+let foto_jogador1 = "asdasdasd"
+let foto_jogador2 = "asdasdasd"
+
+
+socket.emit("jogada", "nomeusuario/iddoquadrado")
+socket.on("jogo", function (jogo){
+    // desenha isso
+    {
+        "50"-> jogador1
+    }
+})
+
+
+
+1 - qualquer jogador
+2 - amigos
+3 - jogar com jogadore de mesma habilidade
+4 - tela dividida
+5 - contra pc
+6 - espectar
+
+anonimo####
+amigos
+qualquer jogador
+IA (estistica de jogadores, minimax, alpha beta)
+jogar em "tela dividida"
+
+tempo para jogar
+
+contar perdas e ganhos
+encontrar jogador com habilidade similiar (relação ganho/perda)
+espectar varios jogos simultaneos ?
+
+trocar itens (X e O imagens)
+
+duplas
